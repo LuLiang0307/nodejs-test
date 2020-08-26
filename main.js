@@ -1,46 +1,52 @@
-window.jQuery = function() {}
-window.jQuery.ajax = function(options) {
-    let url
-    if (arguments.length === 1) {
-        url = options.url
-    } else if (arguments.length === 2) {
-        url = options[0].url
-        options = options[1]
-    }
-    let method = options.method
-    let body = options.body
-    let successFn = options.successFn
-    let failFn = options.failFn
-    let headers = options.headers
-    var request = new XMLHttpRequest()
-    request.open(method, url)
-    for (let key in headers) {
-        let value = headers[key]
-        request.setRequestHeader(key, value)
-    }
-    request.onreadystatechange = function() {
-        if (request.readyState === 4) {
-            if (request.status >= 200 && request.status < 300) {
-                successFn.call(undefined, request.responseText)
-            } else if (request.readyState >= 400) {
-                failFn.call(undefined, request)
-            }
-        }
-
-    }
-    request.send(body)
+window.jQuery = function(nodeOrSelector) {
+    let nodes = {}
+    nodes.addClass = function() {}
+    nodes.html = function() {}
+    return nodes
 }
 window.$ = window.jQuery
-myButton.addEventListener('click', function(e) {
-    window.jQuery.ajax({
-        method: 'POST',
+
+window.Promise = function(fn) {
+    // ...
+    return {
+        then: function() {}
+    }
+}
+
+window.jQuery.ajax = function({ url, method, body, headers }) {
+    return new Promise(function(resolve, reject) {
+        let request = new XMLHttpRequest()
+        request.open(method, url) // 配置request
+        for (let key in headers) {
+            let value = headers[key]
+            request.setRequestHeader(key, value)
+        }
+        request.onreadystatechange = () => {
+            if (request.readyState === 4) {
+                if (request.status >= 200 && request.status < 300) {
+                    resolve.call(undefined, request.responseText)
+                } else if (request.status >= 400) {
+                    reject.call(undefined, request)
+                }
+            }
+        }
+        request.send(body)
+    })
+}
+
+myButton.addEventListener('click', (e) => {
+    let promise = window.jQuery.ajax({
         url: '/xxx',
-        body: 'a=1&&b=2',
+        method: 'get',
         headers: {
             'content-type': 'application/x-www-form-urlencoded',
             'frank': '18'
-        },
-        successFn: (responseText) => { console.log(1) },
-        failFn: (request) => { console.log(2) }
+        }
     })
+
+    promise.then(
+        (text) => { console.log(text) },
+        (request) => { console.log(request) }
+    )
+
 })
