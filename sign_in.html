@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录</title>
+    <style>
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .form-wrapper {
+            border: 1px solid #888888;
+            padding: 10px;
+            min-width: 365px;
+        }
+        
+        .form-wrapper form .row {
+            padding: 10px 0;
+        }
+        
+        .form-wrapper form label {
+            display: inline-block;
+            min-width: 4em;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="form-wrapper">
+        <h1>注册</h1>
+        <form id="signInForm">
+            <div class="row">
+                <label>邮箱</label>
+                <input type="text" name="email">
+                <span class="error"></span>
+            </div>
+            <div class="row">
+                <label>密码</label>
+                <input type="password" name="password">
+                <span class="error"></span>
+            </div>
+            <div class="row">
+                <input type="submit" value="登录">
+            </div>
+        </form>
+    </div>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        let $form = $('#signInForm')
+        let hash = {}
+        $form.on('submit', (e) => {
+            e.preventDefault()
+            let need = ['email', 'password']
+            need.forEach((name) => {
+                let value = $form.find(`[name=${name}]`).val()
+                hash[name] = value
+            })
+            $form.find('.error').each((index, span) => {
+                $(span).text('')
+            })
+            if (hash.email === '') {
+                $form.find("[name='email']").siblings('.error').text('填邮箱呀同学')
+                return
+            }
+            if (hash.password === '') {
+                $form.find("[name='password']").siblings('.error').text('填密码呀同学')
+                return
+            }
+            $.post('/sign_in', hash)
+                .then((response) => {
+                        window.location.href = '/'
+                    },
+                    (request) => {
+                        alert('登录失败')
+                    })
+        })
+    </script>
+</body>
+
+</html>
