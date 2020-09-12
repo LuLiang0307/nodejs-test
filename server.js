@@ -3,6 +3,9 @@ var fs = require('fs')
 var url = require('url')
 const { resolve } = require('path')
 var port = process.argv[2]
+var md5 = require('md5');
+
+let sessions = {}
 
 if (!port) {
     console.log('请指定端口号好不啦？\nnode server.js 8888 这样不会吗？')
@@ -21,18 +24,43 @@ var server = http.createServer(function(request, response) {
     /******** 从这里开始看，上面不要看 ************/
 
     console.log('有个傻子发请求过来啦！路径（带查询参数）为：' + pathWithQuery)
-
-    if (path === '/') {
+    if (path === '/js/main.js') {
+        let string = fs.readFileSync('./js/main.js', 'utf8')
+        response.setHeader('Content-Type', 'application/javascript;charset=utf8')
+        response.setHeader('Cache-Control', 'max-age=0')
+            // response.setHeader('Expires', 'Sat, 12 Sep 2020 11:19:37 GMT')
+        let fileMd5 = md5(string)
+        response.setHeader('Etag', fileMd5)
+        if (request.headers['if-none-match'] === fileMd5) {
+            response.statusCode === 304
+        } else {
+            response.write(string)
+        }
+        response.end()
+    } else if (path === '/css/default.css') {
+        let string = fs.readFileSync('./css/default.css', 'utf8')
+        response.setHeader('Content-Type', 'text/css;charset=utf8')
+            // response.setHeader('Cache-Control', 'max-age=30')
+        response.write(string)
+        response.end()
+    } else if (path === '/') {
         let string = fs.readFileSync('./index.html', 'utf8')
-        let strings = request.headers.cookie.split(';')
+        let cookies = ''
+        if (request.headers.cookie) {
+            cookies = request.headers.cookie.split(';')
+        }
         let hash = {}
-        for (let i = 0; i < strings.length; i++) {
-            let parts = strings[i].split('=')
+        for (let i = 0; i < cookies.length; i++) {
+            let parts = cookies[i].split('=')
             let key = parts[0].trim()
             let value = parts[1].trim()
             hash[key] = value
         }
-        let email = hash.sign_in_email
+        let mySession = sessions[hash.sessionId] //服务器一关闭的话，sessionId就消失了，所以每次都要从登录开始，但是一般服务器是不关闭的
+        let email
+        if (mySession) {
+            email = mySession.sign_in_email
+        }
         let users = fs.readFileSync('./db/users')
         users = JSON.parse(users)
         var foundUser
@@ -136,7 +164,9 @@ var server = http.createServer(function(request, response) {
             }
             if (found) {
                 // Set-Cookie: <cookie-name>=<cookie-value> 
-                response.setHeader('Set-Cookie', `sign_in_email = ${email}`)
+                let sessionId = Math.random() * 100000
+                sessions[sessionId] = { sign_in_email: email }
+                response.setHeader('Set-Cookie', `sessionId = ${sessionId}`)
                 response.statusCode = 200
             } else {
                 response.statusCode = 401
